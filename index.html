@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LibraDB — University Library Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            <path d="M8 7h8M8 11h6" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">LibraDB</h1>
+        </div>
+      </div>
+
+      <nav class="nav-menu" aria-label="Main navigation">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">◫</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="books">
+          <span class="nav-icon">📚</span>
+          <span>Books Catalog</span>
+          <span class="nav-badge" id="badge-books">0</span>
+        </button>
+        <button class="nav-item" data-view="members">
+          <span class="nav-icon">👥</span>
+          <span>Members</span>
+          <span class="nav-badge" id="badge-members">0</span>
+        </button>
+        <button class="nav-item" data-view="circulation">
+          <span class="nav-icon">⇄</span>
+          <span>Circulation</span>
+          <span class="nav-badge warn" id="badge-overdue">0</span>
+        </button>
+        <button class="nav-item" data-view="workbench">
+          <span class="nav-icon">⌘</span>
+          <span>DBMS Workbench</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="db-status-card">
+          <div class="db-status-row">
+            <span class="status-dot"></span>
+            <strong>Relational Engine</strong>
+          </div>
+          <p class="db-status-meta">FK Restrict · Fine ₹5/day</p>
+        </div>
+        <button class="btn btn-outline btn-sm btn-full" id="btn-export-sql">
+          ⬇ Export Backup (.SQL)
+        </button>
+        <button class="btn btn-ghost btn-sm btn-full danger-text" id="btn-reset-db">
+          ↺ Reset Sample Data
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn mobile-only" id="btn-menu-toggle" aria-label="Toggle sidebar">
+            ☰
+          </button>
+          <div>
+            <h2 class="page-title" id="page-title">Dashboard</h2>
+            <p class="page-subtitle" id="page-subtitle">
+              Real-time overview of library inventory, loans, and fines
+            </p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" id="btn-quick-issue">
+            + Issue Book
+          </button>
+          <button class="icon-btn" id="btn-theme-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle theme">
+            <span id="theme-icon">🌙</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- VIEW 1: DASHBOARD -->
+        <section class="view active" id="view-dashboard">
+          <div class="kpi-grid">
+            <article class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Catalog Inventory</span>
+                <span class="kpi-pill indigo">BOOKS</span>
+              </div>
+              <div class="kpi-value" id="kpi-books">0</div>
+              <div class="kpi-foot" id="kpi-books-sub">0 available copies</div>
+            </article>
+
+            <article class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Active Loans</span>
+                <span class="kpi-pill emerald">ISSUED</span>
+              </div>
+              <div class="kpi-value" id="kpi-loans">0</div>
+              <div class="kpi-foot" id="kpi-loans-sub">0 returned all-time</div>
+            </article>
+
+            <article class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Registered Members</span>
+                <span class="kpi-pill sky">MEMBERS</span>
+              </div>
+              <div class="kpi-value" id="kpi-members">0</div>
+              <div class="kpi-foot" id="kpi-members-sub">Students & Faculty</div>
+            </article>
+
+            <article class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Overdue & Fines</span>
+                <span class="kpi-pill rose">₹5 / DAY</span>
+              </div>
+              <div class="kpi-value" id="kpi-fines">₹0</div>
+              <div class="kpi-foot" id="kpi-fines-sub">0 overdue loans</div>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Collection by Category</h3>
+                  <p class="muted">Total vs available copies grouped by subject</p>
+                </div>
+                <div class="segmented" role="group" aria-label="Chart Type">
+                  <button class="seg-btn active" data-chart="bar">Bar</button>
+                  <button class="seg-btn" data-chart="doughnut">Doughnut</button>
+                </div>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="categoryChart"></canvas>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Recent Circulation</h3>
+                  <p class="muted">Latest issue and return transactions</p>
+                </div>
+                <button class="btn btn-ghost btn-sm" data-jump="circulation">View All →</button>
+              </div>
+              <div class="activity-list" id="recent-activity"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- VIEW 2: BOOKS CATALOG -->
+        <section class="view" id="view-books">
+          <div class="toolbar">
+            <div class="search-group">
+              <input
+                type="search"
+                id="books-search"
+                class="input"
+                placeholder="Search title, author, or ISBN..."
+              />
+              <select id="books-category-filter" class="select">
+                <option value="ALL">All Categories</option>
+              </select>
+              <select id="books-stock-filter" class="select">
+                <option value="ALL">All Stock</option>
+                <option value="AVAILABLE">Available Only</option>
+                <option value="OUT">Out of Stock</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="btn-add-book">+ Add Book</button>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Book & Author</th>
+                    <th>ISBN (UNIQUE)</th>
+                    <th>Category</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="books-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 3: MEMBERS DIRECTORY -->
+        <section class="view" id="view-members">
+          <div class="toolbar">
+            <div class="search-group">
+              <input
+                type="search"
+                id="members-search"
+                class="input"
+                placeholder="Search name, ID, email, or department..."
+              />
+              <select id="members-role-filter" class="select">
+                <option value="ALL">All Roles</option>
+                <option value="Student">Students (Limit: 3)</option>
+                <option value="Faculty">Faculty (Limit: 5)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="btn-add-member">+ Add Member</button>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Member</th>
+                    <th>Role & Dept</th>
+                    <th>Active Loans</th>
+                    <th>Joined</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="members-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 4: CIRCULATION DESK -->
+        <section class="view" id="view-circulation">
+          <div class="toolbar">
+            <div class="segmented" id="tx-filter-tabs">
+              <button class="seg-btn active" data-tx-filter="ALL">All</button>
+              <button class="seg-btn" data-tx-filter="ISSUED">Active</button>
+              <button class="seg-btn" data-tx-filter="OVERDUE">Overdue</button>
+              <button class="seg-btn" data-tx-filter="RETURNED">Returned</button>
+            </div>
+            <div class="search-group">
+              <input
+                type="search"
+                id="tx-search"
+                class="input"
+                placeholder="Filter by book or member..."
+              />
+              <button class="btn btn-primary" id="btn-issue-book-tab">+ Issue Book</button>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>TX ID</th>
+                    <th>Book</th>
+                    <th>Member</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Return Date</th>
+                    <th>Fine (₹)</th>
+                    <th>Status</th>
+                    <th class="text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="tx-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 5: DBMS WORKBENCH -->
+        <section class="view" id="view-workbench">
+          <div class="workbench-top">
+            <!-- ER Diagram Card -->
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Entity-Relationship Schema (3NF)</h3>
+                  <p class="muted">Normalized relational model with Foreign Key ON DELETE RESTRICT</p>
+                </div>
+                <span class="badge indigo">3 Tables · 3NF</span>
+              </div>
+
+              <div class="er-canvas">
+                <svg viewBox="0 0 860 270" class="er-svg" role="img" aria-label="ER Diagram for LibraDB">
+                  <!-- Connector Lines -->
+                  <line x1="245" y1="130" x2="310" y2="130" class="er-line" />
+                  <text x="255" y="120" class="er-card-label">1</text>
+                  <text x="292" y="120" class="er-card-label">N</text>
+
+                  <line x1="550" y1="130" x2="615" y2="130" class="er-line" />
+                  <text x="562" y="120" class="er-card-label">N</text>
+                  <text x="600" y="120" class="er-card-label">1</text>
+
+                  <!-- BOOKS Table -->
+                  <g transform="translate(15, 20)">
+                    <rect width="230" height="225" rx="10" class="er-box" />
+                    <rect width="230" height="36" rx="10" class="er-box-head" />
+                    <text x="14" y="23" class="er-table-title">BOOKS</text>
+                    <text x="14" y="60" class="er-col pk">PK  book_id (INT)</text>
+                    <text x="14" y="84" class="er-col uq">UQ  isbn (VARCHAR 20)</text>
+                    <text x="14" y="108" class="er-col">    title (VARCHAR 150)</text>
+                    <text x="14" y="132" class="er-col">    author (VARCHAR 100)</text>
+                    <text x="14" y="156" class="er-col">    category (VARCHAR 50)</text>
+                    <text x="14" y="180" class="er-col">    total_copies (INT ≥ 1)</text>
+                    <text x="14" y="204" class="er-col">    available_copies (INT ≥ 0)</text>
+                  </g>
+
+                  <!-- TRANSACTIONS Table -->
+                  <g transform="translate(310, 20)">
+                    <rect width="240" height="225" rx="10" class="er-box" />
+                    <rect width="240" height="36" rx="10" class="er-box-head accent" />
+                    <text x="14" y="23" class="er-table-title">TRANSACTIONS</text>
+                    <text x="14" y="60" class="er-col pk">PK  tx_id (INT)</text>
+                    <text x="14" y="84" class="er-col fk">FK  book_id → BOOKS</text>
+                    <text x="14" y="108" class="er-col fk">FK  member_id → MEMBERS</text>
+                    <text x="14" y="132" class="er-col">    issue_date (DATE)</text>
+                    <text x="14" y="156" class="er-col">    due_date (DATE)</text>
+                    <text x="14" y="180" class="er-col">    return_date (DATE NULL)</text>
+                    <text x="14" y="204" class="er-col">    fine_amount (DECIMAL 8,2)</text>
+                  </g>
+
+                  <!-- MEMBERS Table -->
+                  <g transform="translate(615, 20)">
+                    <rect width="230" height="225" rx="10" class="er-box" />
+                    <rect width="230" height="36" rx="10" class="er-box-head" />
+                    <text x="14" y="23" class="er-table-title">MEMBERS</text>
+                    <text x="14" y="60" class="er-col pk">PK  member_id (INT)</text>
+                    <text x="14" y="84" class="er-col uq">UQ  reg_code (VARCHAR 20)</text>
+                    <text x="14" y="108" class="er-col">    full_name (VARCHAR 100)</text>
+                    <text x="14" y="132" class="er-col uq">UQ  email (VARCHAR 120)</text>
+                    <text x="14" y="156" class="er-col">    role ('Student'|'Faculty')</text>
+                    <text x="14" y="180" class="er-col">    department (VARCHAR 60)</text>
+                    <text x="14" y="204" class="er-col">    joined_date (DATE)</text>
+                  </g>
+                </svg>
+              </div>
+            </article>
+          </div>
+
+          <div class="workbench-grid">
+            <!-- Preset SQL Runner -->
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Preset SQL Report Runner</h3>
+                  <p class="muted">Run live relational queries (JOIN, GROUP BY, LEFT JOIN, CASE)</p>
+                </div>
+              </div>
+              <div class="preset-buttons" id="preset-buttons"></div>
+              <pre class="sql-preview"><code id="active-sql-code">-- Select a report query above to inspect & run it live</code></pre>
+              <div class="table-wrap compact">
+                <table class="data-table" id="sql-result-table">
+                  <thead></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </article>
+
+            <!-- Live SQL Execution Log -->
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Live SQL Query Log</h3>
+                  <p class="muted">Every CRUD & constraint check executed in real time</p>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="btn-clear-log">Clear</button>
+              </div>
+              <div class="sql-log" id="sql-log"></div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: BOOK ADD/EDIT -->
+  <div class="modal-backdrop" id="modal-book" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-book-title">Add New Book</h3>
+        <button class="icon-btn" data-close-modal="modal-book" aria-label="Close">✕</button>
+      </div>
+      <form id="form-book" class="modal-form">
+        <input type="hidden" id="book-id" />
+        <div class="form-grid">
+          <label class="field span-2">
+            <span>Book Title *</span>
+            <input type="text" id="book-title" class="input" required placeholder="e.g. Database System Concepts" />
+          </label>
+          <label class="field">
+            <span>Author *</span>
+            <input type="text" id="book-author" class="input" required placeholder="e.g. Abraham Silberschatz" />
+          </label>
+          <label class="field">
+            <span>ISBN (UNIQUE) *</span>
+            <input type="text" id="book-isbn" class="input mono" required placeholder="978-0078022159" />
+          </label>
+          <label class="field">
+            <span>Category *</span>
+            <select id="book-category" class="select" required>
+              <option value="Computer Science">Computer Science</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Physics">Physics</option>
+              <option value="Literature">Literature</option>
+              <option value="Management">Management</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Total Copies (≥ 1) *</span>
+            <input type="number" id="book-total" class="input" min="1" max="100" required value="3" />
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-modal="modal-book">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Book</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: MEMBER ADD/EDIT -->
+  <div class="modal-backdrop" id="modal-member" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-member-title">Register Member</h3>
+        <button class="icon-btn" data-close-modal="modal-member" aria-label="Close">✕</button>
+      </div>
+      <form id="form-member" class="modal-form">
+        <input type="hidden" id="member-id" />
+        <div class="form-grid">
+          <label class="field span-2">
+            <span>Full Name *</span>
+            <input type="text" id="member-name" class="input" required placeholder="e.g. Aarav Sharma" />
+          </label>
+          <label class="field">
+            <span>Roll / Employee Code (UNIQUE) *</span>
+            <input type="text" id="member-reg" class="input mono" required placeholder="ECE23B014" />
+          </label>
+          <label class="field">
+            <span>Email (UNIQUE) *</span>
+            <input type="email" id="member-email" class="input" required placeholder="aarav@college.edu.in" />
+          </label>
+          <label class="field">
+            <span>Role *</span>
+            <select id="member-role" class="select" required>
+              <option value="Student">Student (Max 3 books)</option>
+              <option value="Faculty">Faculty (Max 5 books)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Department *</span>
+            <input type="text" id="member-dept" class="input" required placeholder="e.g. ECE / CSE" />
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-modal="modal-member">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ISSUE BOOK -->
+  <div class="modal-backdrop" id="modal-issue" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Issue Book Transaction</h3>
+        <button class="icon-btn" data-close-modal="modal-issue" aria-label="Close">✕</button>
+      </div>
+      <form id="form-issue" class="modal-form">
+        <div class="form-grid">
+          <label class="field span-2">
+            <span>Select Book (Available copies shown) *</span>
+            <select id="issue-book-id" class="select" required></select>
+          </label>
+          <label class="field span-2">
+            <span>Select Member (Current borrow quota shown) *</span>
+            <select id="issue-member-id" class="select" required></select>
+          </label>
+          <label class="field">
+            <span>Issue Date *</span>
+            <input type="date" id="issue-date" class="input" required />
+          </label>
+          <label class="field">
+            <span>Due Date (Default +14 days) *</span>
+            <input type="date" id="issue-due-date" class="input" required />
+          </label>
+        </div>
+        <p class="form-hint">
+          Transaction atomically inserts into <code>TRANSACTIONS</code> and decrements <code>BOOKS.available_copies</code>.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-modal="modal-issue">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm Issue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
